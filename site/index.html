@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ripples</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #1a1a1a;
+            --secondary-text: #555555;
+            --accent: #0070f3;
+            --card-bg: #f9f9f9;
+            --border: #eeeeee;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 4rem 2rem;
+        }
+
+        header {
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-weight: 300;
+            font-size: 2.5rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .description {
+            color: var(--secondary-text);
+            font-size: 1.05rem;
+            text-align: justify;
+        }
+
+        .description p {
+            margin-bottom: 1.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 4rem 0;
+        }
+
+        .artifact-link {
+            text-decoration: none;
+            color: inherit;
+            transition: opacity 0.2s;
+        }
+
+        .artifact-link:hover {
+            opacity: 0.8;
+        }
+
+        .placeholder-img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .video-section {
+            margin-top: 4rem;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .video-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #000;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            position: relative;
+        }
+
+        .video-placeholder::before {
+            content: '▶';
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        footer {
+            margin-top: 6rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 2rem 1.5rem; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Ripples</h1>
+        <div class="description">
+            <p>
+                Ripples is an experiment in what Luciano Floridi has characterized as distant writing using generative AI models. Distant writing occurs at at least one remove. The human author writes the prompt which in turn generates the text. We expand distant writing to interactive digital narrative: the human author writes the prompt which in turn generates the artifact, which may consist of a multimodal combination of media, or an interactive interface. In creating Ripples the prompting is heterogeneous (consisting of text and code) and multilayered--which is sometimes known as metaprompting. A master prompt was used to produce prompts that in turn were refined through further prompts to generate a set of three final artifacts.
+            </p>
+            <p>
+                The Ripples experiment begins with the master system prompt, which produced a mutli-paned interface on analogy with a DJ’s deck. The user of this deck is figured as a performer who can control various entities (they may be human, nonhuman or posthuman) and their relationships in rough analogy with John Horton Conway’s original Game of Life. The common ground is to explore the notion of the ripple - the way that things impact other things; turning repercussions tangible and visible across systems and entities. Each of the three of us then further prompted this deck into particular aesthetic directions. The three tines of the artwork explore this theme in divergent ways, a practical exercise in distant writing. The multiplicity of these artifacts illustrates the abundance that distant writing makes possible.
+            </p>
+            <p>
+                Terhi Marttila’s experiment sets out to imagine the life and interactions of posthuman ecologies. This version of the interface allows the user to select an entity in a forest and to explore their imagined thoughts and actions and to see how these actions play out on the other entities in the imaginary ecology. Watson’s : (? - auto-mode, “unsupervised”, ecology, simulation). Finally, Jay D. Bolter’s Whispers: the interface was minimized to present the reader with a visual grid of images of human characters together. A separate pane allows the reader access to each character's thoughts. The reader can then whisper to a character and the whisper will influence that character's thoughts and ripple out to some of the other characters as well. The collective outlook of the characters will slowly evolve.
+            </p>
+        </div>
+    </header>
+
+    <div class="grid">
+        <a href="https://jdbolter.github.io/ripples/" class="artifact-link" target="_blank">
+            <div class="placeholder-img">Bolter: Whispers</div>
+        </a>
+        <a href="http://trhi.github.io/ripples" class="artifact-link" target="_blank">
+            <div class="placeholder-img">Marttila: Ecologies</div>
+        </a>
+        <a href="https://hartswf0.github.io/ripples/" class="artifact-link" target="_blank">
+            <div class="placeholder-img">Watson: Simulation</div>
+        </a>
+    </div>
+
+    <section class="video-section">
+        <div class="video-grid">
+            <div class="video-placeholder">YouTube Video 1</div>
+            <div class="video-placeholder">YouTube Video 2</div>
+            <div class="video-placeholder">YouTube Video 3</div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 - 2026 Ripples Project. Experiments in distant writing.</p>
+    </footer>
+</div>
+
+<script>
+    // Minimalist JS for subtle interaction if needed later
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('Ripples site initialized.');
+    });
+</script>
+
+</body>
+</html>
