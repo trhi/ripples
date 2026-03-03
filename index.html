@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIPPLES Worldtext Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app">
+    <header class="app-header">
+        <h1>RIPPLES</h1>
+        <div class="scenario-select">
+            <label for="scenario">Scenario</label>
+            <select id="scenario"></select>
+        </div>
+        <div class="api-key-input">
+            <label for="apiKey">OpenAI Key</label>
+            <input type="password" id="apiKey" placeholder="paste key" />
+            <button id="submitApiKey" class="api-key-btn">Set Key</button>
+            <span id="apiKeyStatus" class="api-key-status"></span>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <section class="grid-section">
+            <div id="grid" class="grid"></div>
+        </section>
+
+        <aside class="sidebar">
+            <section class="entity-pool">
+                <h2>Entities</h2>
+                <ul id="entityList"></ul>
+                <button id="addEntityBtn" class="add-entity">Add Entity</button>
+            </section>
+            <!-- vector controls removed in favor of latent text buttons -->
+
+            <section class="autoplay-control">
+                <button id="autoplayBtn">Autoplay: Off (Space)</button>
+                <span id="countdown"></span>
+            </section>
+
+            <section class="latent-panel">
+                <h2>Latent Library</h2>
+                <div id="latentActions"></div>
+                <section class="lock-control">
+                    <button id="lockBtn" disabled>Lock & Play</button>
+                </section>
+            </section>
+
+            <section class="audit-log">
+                <h2>Audit Log</h2>
+                <ul id="auditLog"></ul>
+            </section>
+        </aside>
+
+        <section class="worldtext-view">
+            <h2>Worldtext</h2>
+            <div id="worldtext" class="worldtext"></div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <small>&copy; 2025-2026 RIPPLES Project</small>
+    </footer>
+</div>
+
+<script src="app.js"></script>
+<script>
+// allow runtime update of API key
+const apiKeyInput = document.getElementById('apiKey');
+const submitBtn = document.getElementById('submitApiKey');
+const statusSpan = document.getElementById('apiKeyStatus');
+
+function acknowledgeKey(message, duration=2000) {
+    statusSpan.textContent = message;
+    setTimeout(() => { statusSpan.textContent = ''; }, duration);
+}
+
+submitBtn.addEventListener('click', () => {
+    const key = apiKeyInput.value.trim();
+    if (key && window.updateAPIKey) {
+        window.updateAPIKey(key);
+        acknowledgeKey('Key accepted');
+    } else {
+        acknowledgeKey('Enter a key');
+    }
+});
+
+apiKeyInput.addEventListener('change', () => {
+    // still update on change in case user prefers that
+    if (window.updateAPIKey) {
+        window.updateAPIKey(apiKeyInput.value.trim());
+        acknowledgeKey('Key updated');
+    }
+});
+</script>
+</body>
+</html>
