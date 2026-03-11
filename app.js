@@ -4,8 +4,9 @@ let selectedEntity = null;
 let tick = 0;
 let isAutoplay = false;
 let auditLog = [];
-let bpm = 20;
+let bpm = 3;
 let autoplayInterval = null;
+const MAX_ENTITIES = 33;
 
 // Load variations from JSON file
 let textVariations = null;
@@ -13,11 +14,7 @@ let textVariations = null;
 // information about the latent the user selected (seed for generation)
 let initiatingInfo = { entityId: null, vector: null, text: '' };
 
-// API key placeholder
-let OPENAI_API_KEY = ''; // <-- fill in with your key or leave blank to use latent text only
-
-// helper for runtime updating (called from ripples.html)
-window.updateAPIKey = (k) => { OPENAI_API_KEY = k; console.log('API key updated'); };
+// API key now handled server-side via Vercel environment variables
 
 // Latent library with a forest scenario
 const latentLibrary = {
@@ -34,70 +31,82 @@ const latentLibrary = {
             { id: 'fern', name: 'Lush Fern', type: 'animate', state: 'unfurling', position: { x: 0, y: 2 }, icon: '🌿', adjacentTo: [] },
             { id: 'blueberry', name: 'Wild Blueberry', type: 'animate', state: 'ripe', position: { x: 7, y: 4 }, icon: '🫐', adjacentTo: [] },
             { id: 'deer', name: 'Forest Deer', type: 'animate', state: 'foraging', position: { x: 3, y: 5 }, icon: '🦌', adjacentTo: [] },
-            { id: 'lichen', name: 'Pale Lichen', type: 'animate', state: 'spreading', position: { x: 2, y: 0 }, icon: '🟩', adjacentTo: [] }
+            { id: 'lichen', name: 'Pale Lichen', type: 'animate', state: 'spreading', position: { x: 2, y: 0 }, icon: '🟩', adjacentTo: [] },
+            { id: 'sun', name: 'Midday Sun', type: 'abstract', state: 'radiant', position: { x: 7, y: 0 }, icon: '☀️', adjacentTo: ['cloud', 'pine'] },
+            { id: 'beetle', name: 'Ground Beetle', type: 'animate', state: 'scuttling', position: { x: 6, y: 3 }, icon: '🪲', adjacentTo: ['mushroom', 'fern'] },
+            { id: 'ant', name: 'Scout Ant', type: 'animate', state: 'searching', position: { x: 1, y: 1 }, icon: '🐜', adjacentTo: ['ants-nest', 'mushroom'] }
         ],
         latent: {
             'boulder': {
                 ACTION: [
                     'I shift imperceptibly toward the stream; gravity guides my slow, patient slide across moss and years.',
-                    'Roots clutch my underside, lifting and reshaping the earth around me; movement is resisted and negotiated.',
-                    'Lichen spreads across my face, turning stone into a quiet host for green, softening my edges with time.'
+                    'Roots clutch my underside, lifting and reshaping the earth around me; movement is resisted and negotiated.'
                 ]
             },
             'pine': {
                 ACTION: [
                     'My needles angle toward shafts of light; each year I extend, knotting sky and earth with patient growth.',
-                    'A sudden gust tears a branch; I reroute sap and harden tissue, learning the cost of wind by wound.',
-                    'Cold settles and I draw inward; needles stiffen as seasons fold me into a quieter, measured sleep.'
+                    'A sudden gust tears a branch; I reroute sap and harden tissue, learning the cost of wind by wound.'
                 ]
             },
             'ants-nest': {
                 ACTION: [
                     'Trails flare toward a fallen berry; workers ferry sugar back, the colony a braided network of taste and labor.',
-                    'A toad collapses into tunnels, scent and pressure overwhelming passages; pheromones spike to coordinate defense.',
-                    'Rain presses soil into chambers; movement slows as water rearranges the architecture of our home.'
+                    'A toad collapses into tunnels, scent and pressure overwhelming passages; pheromones spike to coordinate defense.'
                 ]
             },
             'mushroom': {
                 ACTION: [
                     'I push my cap outward and fling spores into damp air; the forest learns my presence in drifting clouds.',
-                    'A beetle bores and enzymes flood; tissue collapses and reshapes as I digest the invader within.',
-                    'Dew beads along gills; at night my pale underside lights the damp floor like a soft, breathing lamp.'
+                    'A beetle bores and enzymes flood; tissue collapses and reshapes as I digest the invader within.'
                 ]
             },
             'cloud': {
                 ACTION: [
                     'Edges thin toward the warm ground; I condense and yearn to let salt and rain return to roots below.',
-                    'Thermals lift me; cool air strips weight and scent until the forest falls away and I drift alone.',
-                    'I spill a curtain of mist, dissolving the world and knitting air back into vapor and quiet.'
+                    'Thermals lift me; cool air strips weight and scent until the forest falls away and I drift alone.'
                 ]
             },
             'fern': {
                 ACTION: [
                     'Fronds unfurl toward a dim sun, curling outward in green spirals seeking every thin beam of light.',
-                    'Shade deepens; my growth slows and green dims as needles settle upon me, weighing each leaflet.',
-                    'A curl browns and folds; I return nutrients to soil and rest until warmth teases me open again.'
+                    'Shade deepens; my growth slows and green dims as needles settle upon me, weighing each leaflet.'
                 ]
             },
             'blueberry': {
                 ACTION: [
                     'Berries ripen to a deep blue, holding sun-sweet heat beneath a fragile skin.',
-                    'Large paws shake branches; scent and sugar scatter as predators test the abundance I cradle.',
-                    'Leaves redden for cold; I slow ripening and hold fruit like small, stubborn suns.'
+                    'Large paws shake branches; scent and sugar scatter as predators test the abundance I cradle.'
                 ]
             },
             'deer': {
                 ACTION: [
                     'I ghost through fern and moss toward the scent of berries, muscles tuned to soft, careful steps.',
-                    'A sudden crack sends me skittering; heart thunders as I decide whether to flee or freeze.',
-                    'Antlers harden and shed velvet; I move differently now, edges sharper in the thinning light.'
+                    'A sudden crack sends me skittering; heart thunders as I decide whether to flee or freeze.'
                 ]
             },
             'lichen': {
                 ACTION: [
                     'I spread slowly over north bark, patient and thin, recording years in pale green rings.',
-                    'A sour haze settles the air; growth slows and I tense, folding metabolic pace down.',
-                    'Cracks form and fragments sail on wind; I colonize new bark where chance lands me.'
+                    'A sour haze settles the air; growth slows and I tense, folding metabolic pace down.'
+                ]
+            },
+            'sun': {
+                ACTION: [
+                    'I pour heat through needles and stone, drawing sap upward and waking hidden movement in the soil.',
+                    'Cloud edge crosses me; brightness flickers and the forest cools in brief, trembling patches of shade.'
+                ]
+            },
+            'beetle': {
+                ACTION: [
+                    'I thread under leaf litter, antennae tasting damp routes between fungus stem and root hair.',
+                    'A bird shadow sweeps overhead; I freeze, shell tight, and wait for danger to pass.'
+                ]
+            },
+            'ant': {
+                ACTION: [
+                    'I scout ahead of the column, laying a faint chemical line that others will quickly amplify.',
+                    'A twig blocks the trail; I circle, compare scents, and reroute traffic around the obstacle.'
                 ]
             }
         },
@@ -111,10 +120,13 @@ const latentLibrary = {
             'fern': [],
             'blueberry': [],
             'deer': [],
-            'lichen': []
+            'lichen': [],
+            'sun': ['cloud', 'pine'],
+            'beetle': ['mushroom', 'fern'],
+            'ant': ['ants-nest', 'mushroom']
         },
         ambientBehaviors: [
-            { entity: 'cloud', vector: 'ACTION', index: 2, probability: 0.4 },
+            { entity: 'cloud', vector: 'ACTION', index: 1, probability: 0.4 },
             { entity: 'ants-nest', vector: 'ACTION', index: 0, probability: 0.3 },
             { entity: 'pine', vector: 'ACTION', index: 0, probability: 0.3 }
         ]
@@ -233,7 +245,7 @@ function rebuildEntityPool() {
     // enforce limit and update add button
     const addBtn = document.getElementById('addEntityBtn');
     if (addBtn) {
-        addBtn.disabled = currentScenario.entities.length >= 10;
+        addBtn.disabled = currentScenario.entities.length >= MAX_ENTITIES;
     }
 }
 
@@ -254,13 +266,27 @@ function updateVectorButtons() {
 }
 
 function updateLatentPanel() {
-    // render three ACTION buttons for the selected entity
+    // render two ACTION buttons for the selected entity
     latentActionsContainer.innerHTML = '';
-    if (!selectedEntity) return;
+    const processing = generatingLatents;
+    const optionsRow = document.createElement('div');
+    optionsRow.className = 'latent-options-row';
+    latentActionsContainer.appendChild(optionsRow);
+
+    if (!selectedEntity) {
+        for (let i = 0; i < 2; i++) {
+            const btn = document.createElement('button');
+            btn.id = `latentAction${i}`;
+            btn.className = 'latent-entry action';
+            btn.textContent = 'pick an entity, choose an action';
+            btn.disabled = true;
+            optionsRow.appendChild(btn);
+        }
+        return;
+    }
+
     const id = selectedEntity.id;
     const latent = currentScenario.latent[id] || {};
-    // if generation is in progress, show placeholders
-    const processing = generatingLatents;
     
     // show grayed-out context box if an action was previously triggered
     if (initiatingInfo && initiatingInfo.entityId && initiatingInfo.text) {
@@ -269,10 +295,10 @@ function updateLatentPanel() {
         const initiatingEntity = currentScenario.entities.find(e => e.id === initiatingInfo.entityId);
         const entityName = initiatingEntity ? initiatingEntity.name : initiatingInfo.entityId;
         contextBox.textContent = `${entityName}: ${initiatingInfo.text}`;
-        latentActionsContainer.appendChild(contextBox);
+        latentActionsContainer.insertBefore(contextBox, optionsRow);
     }
     
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
         const btn = document.createElement('button');
         btn.id = `latentAction${i}`;
         btn.className = 'latent-entry action';
@@ -282,7 +308,7 @@ function updateLatentPanel() {
         btn.textContent = text;
         // clicking selects a pending action (index)
         btn.onclick = () => selectPending(i, text);
-        latentActionsContainer.appendChild(btn);
+        optionsRow.appendChild(btn);
     }
 }
 
@@ -351,7 +377,6 @@ function handleKeydown(evt) {
     switch(evt.key) {
         case 'g': case 'G': selectPending(0); break;
         case 'o': case 'O': selectPending(1); break;
-        case 's': case 'S': selectPending(2); break;
         case ' ': toggleAutoplay(); break;
         case 'ArrowLeft': cycleScenario(-1); break;
         case 'ArrowRight': cycleScenario(1); break;
@@ -417,8 +442,14 @@ function performAmbientAction() {
     for (const b of behaviors) {
         cum += b.probability;
         if (r < cum) {
+            // Select the entity
             selectEntity(b.entity);
-            triggerRipple(b.vector);
+            // Select the action
+            selectPending(b.index);
+            // Execute the action after a short delay
+            setTimeout(() => {
+                lockAndPlay();
+            }, 500);
             break;
         }
     }
@@ -520,9 +551,9 @@ async function refreshAllLatentsCompletely() {
     for (const ent of currentScenario.entities) {
         const id = ent.id;
         if (!currentScenario.latent[id]) currentScenario.latent[id] = {};
-        // generate three ACTION entries per entity
+        // generate two ACTION entries per entity
         currentScenario.latent[id].ACTION = currentScenario.latent[id].ACTION || [];
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 2; i++) {
             tasks.push((async (idx) => {
                 const newText = await generateWorldtext(currentScenario, id, 'ACTION', idx);
                 console.log('[regen]', id, 'ACTION', idx, newText);
@@ -537,7 +568,7 @@ async function refreshAllLatentsCompletely() {
 
 function addRandomEntity() {
     if (!currentScenario) return;
-    if (currentScenario.entities.length >= 10) return;
+    if (currentScenario.entities.length >= MAX_ENTITIES) return;
     // simple pool of extras
     const pool = [
         { id: 'fern', name: 'Lush Fern', type: 'animate', state: 'unfurling', icon: '🌿', adjacentTo: [] },
@@ -587,45 +618,38 @@ async function generateWorldtext(scenario, entityId, vector, index=0) {
             latent = 'I consider this now.';
         }
     }
-    // attempt API-driven generation if we have a key
-    if (OPENAI_API_KEY) {
-        const systemPrompts = `You are a RIPPLES worldtext generator. Follow the specification exactly: produce a total of 10-20 words in a **first-person** poetic description from the perspective of the given entity when the provided vector is applied. Use uncertainty markers and state-focused language. Do not write in third person.`;
-        // include initiating context if available
-        let contextSnippet = '';
-        if (initiatingInfo && initiatingInfo.entityId && initiatingInfo.entityId !== entityId) {
-            contextSnippet = `\nInitiating Entity: ${initiatingInfo.entityId}` +
-                         `\nInitiating Action Index: ${initiatingInfo.index}` +
-                         `\nInitiating Action Text: ${initiatingInfo.text}`;
+    
+    // attempt API-driven generation via serverless endpoint
+    try {
+        const resp = await fetch('/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                scenarioName: scenario.name,
+                entityId,
+                vector,
+                index,
+                latent,
+                initiatingInfo
+            })
+        });
+        
+        const data = await resp.json();
+        
+        // If API returned text successfully, use it
+        if (data.text && data.text !== latent) {
+            return data.text;
         }
-        let userPrompt = `Scenario: ${scenario.name}\nEntity: ${entityId}\nVector: ${vector}\nActionIndex: ${index}` + contextSnippet;
-        if (latent) userPrompt += `\nSeed-action text: ${latent}`;
-        try {
-            const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4o-mini',
-                    messages: [
-                        { role: 'system', content: systemPrompts },
-                        { role: 'user', content: userPrompt }
-                    ],
-                    max_tokens: 500
-                })
-            });
-            const data = await resp.json();
-            const text = data.choices?.[0]?.message?.content?.trim();
-            if (text && text !== latent) return text;
-            // if the LLM returned nothing or repeated the seed, fall through to procedural
-        } catch (e) {
-            console.error('LLM error', e);
-            // fall through to procedural generation
-        }
+        
+        // If API indicated fallback or returned nothing, use procedural
+    } catch (e) {
+        console.error('API generation error:', e);
+        // fall through to procedural generation
     }
 
-    // no key or API failed/returned empty: procedural fallback
+    // API failed or returned empty: procedural fallback
     return generateProceduralWorldtext(scenario, entityId, vector, latent, index);
 }
 

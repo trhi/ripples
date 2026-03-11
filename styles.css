@@ -1,3 +1,6 @@
+/* Import Bitcount Grid Single font */
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single&display=swap');
+
 /* light and airy color scheme */
 :root {
     --term-bg: #ffffff;
@@ -30,7 +33,46 @@ a { color: var(--term-text); text-decoration: none; }
     padding: 1rem;
     display: flex;
     align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 0;
+}
+
+.app-header h1 {
+    font-family: 'Bitcount Grid Single', 'Courier New', monospace;
+    font-size: 100px;
+    font-style: normal;
+    font-weight: normal;
+    color: #f0f0f0;
+    margin: 0;
+    position: relative;
+    z-index: -1;
+}
+
+.top-latent-panel {
+    padding: 0 1rem 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+#latentActions {
+    display: block;
+}
+
+.latent-options-row {
+    display: flex;
+    flex-wrap: nowrap;
     justify-content: space-between;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.latent-options-row .latent-entry {
+    flex: 0 0 45%;
+    max-width: 45%;
+    min-width: 0;
+    margin-bottom: 0;
 }
 
 .entity-pool h2 {
@@ -61,12 +103,21 @@ a { color: var(--term-text); text-decoration: none; }
 }
 #addEntityBtn:disabled { opacity: 0.4; cursor: default; }
 
-.lock-control { margin-top: 0.5rem; }
+.lock-control {
+    margin-top: 0.5rem;
+    width: 100%;
+    text-align: center;
+}
 .lock-control button {
+    display: inline-block;
+    margin: 0 auto;
     padding: 0.4rem 0.8rem;
-    font-size: 0.95rem;
-    background: var(--term-gold);
-    border: none;
+    font-family: 'Bitcount Grid Single', 'Courier New', monospace;
+    font-size: 42px;
+    color: var(--term-gold);
+    background: #e0e0e0;
+    border: 2px solid var(--term-gold);
+    border-radius: 8px;
     cursor: pointer;
     transition: opacity 0.15s;
 }
@@ -116,7 +167,8 @@ a { color: var(--term-text); text-decoration: none; }
 
 .app-main {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
 }
 
@@ -125,6 +177,7 @@ a { color: var(--term-text); text-decoration: none; }
     width: 220px;
     min-width: 300px;
     flex-shrink: 0;
+    display: none;
 }
 
 /* grid section limited to 600px so it never expands */
@@ -141,7 +194,6 @@ a { color: var(--term-text); text-decoration: none; }
 }
 
 .grid-section {
-    flex: 2 1 400px;
     padding: 1rem;
 }
 
@@ -150,6 +202,9 @@ a { color: var(--term-text); text-decoration: none; }
     grid-template-columns: repeat(var(--cols,8), 1fr);
     gap: 2px;
     background: var(--grid-line);
+    border-radius: 12px;
+    overflow: hidden;
+    padding: 2px;
 }
 
 .grid-cell {
@@ -160,6 +215,8 @@ a { color: var(--term-text); text-decoration: none; }
     justify-content: center;
     position: relative;
     cursor: pointer;
+    font-size: 26px;
+    border-radius: 6px;
 }
 
 .grid-cell.has-entity { background: var(--grid-node); }
@@ -181,6 +238,7 @@ a { color: var(--term-text); text-decoration: none; }
     display: block;
     text-align: left;
     border: 1px solid var(--term-dim);
+    border-radius: 8px;
     padding: 0.5rem;
     margin-bottom: 0.5rem;
     /* allow full height and wrap instead of clipping */
@@ -203,6 +261,7 @@ a { color: var(--term-text); text-decoration: none; }
     display: block;
     text-align: left;
     border: 1px solid var(--term-dim);
+    border-radius: 8px;
     padding: 0.5rem;
     margin-bottom: 0.75rem;
     background: #e8e8e8;
@@ -217,7 +276,6 @@ a { color: var(--term-text); text-decoration: none; }
 
 .worldtext-view {
     display: none; /* hidden */
-}
     padding: 1rem;
     border: 1px solid var(--term-dim);
     min-height: 8rem;
@@ -241,7 +299,29 @@ a { color: var(--term-text); text-decoration: none; }
 .audit-log li { margin-bottom: 0.3rem; cursor: pointer; }
 .audit-log li:hover { text-decoration: underline; }
 
-.autoplay-control { margin: 1rem 0; }
+.autoplay-control {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 100;
+    display: none;
+}
+
+.autoplay-control button {
+    font-size: 20px;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: var(--term-cyan);
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.app-footer {
+    text-align: center;
+    display: none;
+}
 
 /* ripple animation helper */
 @keyframes ripple-expand {

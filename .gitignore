@@ -1,2 +1,21 @@
 IGNORE/
 .DS_Store
+
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# Vercel
+.vercel
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
