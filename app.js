@@ -619,7 +619,47 @@ async function generateWorldtext(scenario, entityId, vector, index=0) {
         }
     }
     
-    // attempt API-driven generation via serverless endpoint
+    // First, try local Ollama instance
+    try {
+        const systemPrompt = `You are a RIPPLES worldtext generator. Follow the specification exactly: produce a total of 10-20 words in a **first-person** poetic description from the perspective of the given entity when the provided vector is applied. Use uncertainty markers and state-focused language. Do not write in third person.`;
+        
+        let contextSnippet = '';
+        if (initiatingInfo && initiatingInfo.entityId && initiatingInfo.entityId !== entityId) {
+            contextSnippet = `\nInitiating Entity: ${initiatingInfo.entityId}` +
+                           `\nInitiating Action Index: ${initiatingInfo.index}` +
+                           `\nInitiating Action Text: ${initiatingInfo.text}`;
+        }
+        
+        let userPrompt = `Scenario: ${scenario.name}\nEntity: ${entityId}\nVector: ${vector}\nActionIndex: ${index}` + contextSnippet;
+        if (latent) {
+            userPrompt += `\nSeed-action text: ${latent}`;
+        }
+
+        const ollamaResp = await fetch('http://localhost:11434/api/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'llama3.2',
+                prompt: `${systemPrompt}\n\n${userPrompt}`,
+                stream: false
+            })
+        });
+        
+        if (ollamaResp.ok) {
+            const ollamaData = await ollamaResp.json();
+            const text = ollamaData.response?.trim();
+            if (text && text !== latent) {
+                console.log('[Ollama] Generated text:', text);
+                return text;
+            }
+        }
+    } catch (e) {
+        console.log('[Ollama] Not available, trying OpenAI...', e.message);
+    }
+    
+    // Fall back to OpenAI via serverless endpoint
     try {
         const resp = await fetch('/api/generate', {
             method: 'POST',
@@ -640,16 +680,18 @@ async function generateWorldtext(scenario, entityId, vector, index=0) {
         
         // If API returned text successfully, use it
         if (data.text && data.text !== latent) {
+            console.log('[OpenAI] Generated text:', data.text);
             return data.text;
         }
         
         // If API indicated fallback or returned nothing, use procedural
     } catch (e) {
-        console.error('API generation error:', e);
+        console.error('[OpenAI] API generation error:', e);
         // fall through to procedural generation
     }
 
-    // API failed or returned empty: procedural fallback
+    // Both APIs failed or returned empty: procedural fallback
+    console.log('[Procedural] Using procedural generation');
     return generateProceduralWorldtext(scenario, entityId, vector, latent, index);
 }
 
