@@ -1,5 +1,6 @@
 IGNORE/
 .DS_Store
+node_modules/
 
 # Environment variables
 .env

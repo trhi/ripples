@@ -1,5 +1,7 @@
 /* Import Bitcount Grid Single font */
 @import url('https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single&display=swap');
+/* Import Plus Jakarta Sans font */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
 
 /* light and airy color scheme */
 :root {
@@ -53,6 +55,28 @@ a { color: var(--term-text); text-decoration: none; }
     padding: 0 1rem 1rem;
     position: relative;
     z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.cast-panel {
+    padding: 0 1rem 0.5rem;
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.cast-emojis {
+    background: #fafafa;
+    border: 1px solid var(--term-dim);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 32px;
 }
 
 #latentActions {
@@ -246,7 +270,8 @@ a { color: var(--term-text); text-decoration: none; }
     overflow: visible;
     white-space: normal;
     word-wrap: break-word;
-    font-size: 0.9rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 20px;
     background: #fafafa;
     cursor: pointer;
     transition: background 0.15s;
@@ -259,14 +284,15 @@ a { color: var(--term-text); text-decoration: none; }
 
 .latent-context-box {
     display: block;
-    text-align: left;
+    text-align: center;
     border: 1px solid var(--term-dim);
     border-radius: 8px;
     padding: 0.5rem;
     margin-bottom: 0.75rem;
     background: #e8e8e8;
     color: #666;
-    font-size: 0.85rem;
+    font-family: 'Bitcount Grid Single', 'Courier New', monospace;
+    font-size: 16px;
     font-style: italic;
     white-space: normal;
     word-wrap: break-word;

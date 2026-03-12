@@ -3,63 +3,302 @@
     "ACTION": [
       "I edge a hair laterally, feeling the slow tug of ice and root pull.",
       "I soak rainfall, growing heavy, inching toward the stream bed.",
-      "I resist the slide by nestling deeper into moss and root hold."
+      "I resist the slide by nestling deeper into moss and root hold.",
+      "Pine roots wedge beneath me, lifting imperceptibly year by year.",
+      "Ants trace paths across my surface, their chemical trails mapping my contours.",
+      "Mushroom filaments probe my underside, digesting what little soil remains.",
+      "I feel deer hooves testing my stability as they cross to higher ground.",
+      "Cloud shadows sweep across me, cooling one face while the sun warms another.",
+      "Beetle larvae nest in crevices I've gathered over decades of stillness."
     ]
   },
   "pine": {
     "ACTION": [
       "I spill resin onto a wound, sealing insects out and memory in.",
       "I thrust a new shoot skyward, twisting around neighboring trunks for light.",
-      "I drop a shower of needles to carpet the soil beneath me."
+      "I drop a shower of needles to carpet the soil beneath me.",
+      "My roots sense the boulder shifting and adjust their grip accordingly.",
+      "Ants farm aphids on my youngest branches, tending them like livestock.",
+      "Mushrooms fruit at my base, drawing nutrients from my fallen needles. [SPAWNS:mushroom]",
+      "I shade the ferns below, controlling how much light filters through my canopy.",
+      "Deer browse my lower branches, pruning me into an hourglass shape over time.",
+      "Cloud moisture condenses on my needles, each drop feeding the lichen below."
     ]
   },
   "ants-nest": {
     "ACTION": [
       "Workers stream out along a scent trail to haul back a berry.",
       "I seal a leaking chamber with mud before the rain pours in.",
-      "I widen a tunnel to accommodate the queen\u2019s swollen abdomen."
+      "I widen a tunnel to accommodate the queen's swollen abdomen.",
+      "Scouts report mushroom spores nearby; we shift excavation to avoid contamination.",
+      "A boulder above threatens collapse; pheromone alarms cascade through every tunnel.",
+      "We harvest honeydew from beetles that lumber past, trading protection for sugar.",
+      "Pine roots breach a chamber wall; workers reroute traffic around the intrusion.",
+      "Deer hoofbeats vibrate through soil; the colony pauses in synchronized stillness.",
+      "Ant scouts trail across lichen, testing whether its surface can bear our highway."
     ]
   },
   "mushroom": {
     "ACTION": [
       "I push my cap through the litter and open gills to damp air.",
       "I exude a fragrant mist to lure a beetle for spore transport.",
-      "I rotward, collapsing and feeding the mycelium network below."
+      "I rotward, collapsing and feeding the mycelium network below.",
+      "My filaments intertwine with pine roots, trading minerals for sugars in silence.",
+      "Ants investigate my stem, antennae testing whether I'm edible or toxic.",
+      "I sense the boulder's dampness above and angle my fruiting body toward shade.",
+      "Deer sniff but avoid me; some ancestral knowledge warns them away from my flesh.",
+      "Cloud-dropped rain swells my tissues, triggering spore release in misty clouds.",
+      "Mycelium erupts in multiple locations; our network births new fruiting bodies. [SPAWNS:mushroom]",
+      "Beetles bore into my cap, unwitting couriers spreading my offspring through the forest."
     ]
   },
   "cloud": {
     "ACTION": [
       "I stretch thin over the pines, shading the undergrowth from noon heat.",
       "I condense a drop and let it fall, hearing the thud on leaves.",
-      "I drift eastward, merging with morning mist until I am indistinct."
+      "I drift eastward, merging with morning mist until I am indistinct.",
+      "The sun pushes through me, turning my edges to vapor and gold.",
+      "I rain onto the ants-nest, flooding their upper tunnels and forcing retreat downward.",
+      "Mushrooms below release spores that seed my belly with new moisture nuclei.",
+      "I watch deer move as shadows beneath me, their paths traced by my drifting form.",
+      "Boulder warmth pulls me lower, condensing my edges into fog that clings to stone.",
+      "Pine needles pierce my underside, each one gathering moisture I freely give."
     ]
   },
   "fern": {
     "ACTION": [
       "I unfurl a new frond into a sliver of shafted light.",
       "I send runners to encircle a damp log for anchorage.",
-      "I gather dew on my hairs and draw it down to roots."
+      "I gather dew on my hairs and draw it down to roots.",
+      "Pine shade shifts and I reach desperately toward any gap in the canopy.",
+      "Beetles shelter under my fronds at night, their warmth feeding back into morning dew.",
+      "Deer crush my outer leaves while browsing; I respond by thickening my stems.",
+      "Ants march through my understory, ignoring me entirely in their focused purpose.",
+      "Mushroom spores settle on my fronds, and I shudder them away with surface tension.",
+      "Cloud shadow lengthens across me; I slow my growth and wait for sun's return."
     ]
   },
   "blueberry": {
     "ACTION": [
       "I swell my berries toward a taste of sunlight and rain.",
       "I send a cane creeping along the moss, seeking richer earth.",
-      "I release scent to call insects to my white blossoms."
+      "I release scent to call insects to my white blossoms.",
+      "Deer arrive and strip my branches bare, leaving stems that will regenerate more fiercely.",
+      "Ants patrol my stems for aphids, and I offer nectar in exchange for their protection.",
+      "Beetles pollinate my flowers clumsily, dusted yellow and drunk on sweetness.",
+      "Pine needles acidify the soil around me; I adapt my roots to drink the sharpness.",
+      "Cloud rain makes my berries swell too fast, some splitting open in sugary wounds.",
+      "Sun ripens me unevenly; I focus energy on the brightest fruit, abandoning the shaded."
     ]
   },
   "deer": {
     "ACTION": [
       "I step lightly through ferns toward a distant berry bush.",
       "I lift my head to scent the breeze for danger or sweetness.",
-      "I paw damp soil, turning over roots in a rummage."
+      "I paw damp soil, turning over roots in a rummage.",
+      "Boulder offers a scratching post; I rub velvet from my antlers against its patience.",
+      "I browse pine's lower branches, leaving the tree stunted and misshapen at my height.",
+      "Ants swarm up my leg when I step on their nest; I leap away, shaking them loose.",
+      "Mushrooms smell wrong, foreign; I circle them cautiously and move to safer grazing.",
+      "Cloud shadow spooks me briefly; I freeze, ears swiveling, then resume my browsing.",
+      "I notice beetles underfoot and adjust my path to avoid crushing their delicate work.",
+      "Owl shadow crosses overhead; instinct screams and I bolt into deeper cover. [FLEES]"
     ]
   },
   "lichen": {
     "ACTION": [
       "I spread a thin crust over bark, patient and unhurried.",
       "I drink mist from the morning air into my body.",
-      "I send a fragment on wind, looking for new rock to claim."
+      "I send a fragment on wind, looking for new rock to claim.",
+      "Pine bark offers new territory; I colonize slowly, one millimeter per season.",
+      "Ants walk across me without acknowledgment; I am beneath their notice, and I persist.",
+      "Deer rub against my boulder, scraping portions of me away, but my core holds firm.",
+      "Cloud moisture feeds me most; I orient growth toward the prevailing weather.",
+      "Beetles occasionally graze on my edges, but I offer poor nutrition and they move on.",
+      "Sun desiccates me in summer; I curl inward and wait for the next rain to revive."
+    ]
+  },
+  "sun": {
+    "ACTION": [
+      "I pour heat through needles and stone, drawing sap upward and waking hidden movement in the soil.",
+      "Cloud edge crosses me; brightness flickers and the forest cools in brief, trembling patches of shade.",
+      "I press through pine canopy gaps, spotlighting ferns and forcing them to unfurl faster than they wish.",
+      "Boulder absorbs my warmth and radiates it back at night, extending my influence into darkness.",
+      "Ants navigate by my polarized light, their columns shifting angles as I arc overhead.",
+      "Mushrooms retreat from my direct gaze, preferring the dappled shadows I create through leaves.",
+      "I ripen blueberries unevenly, favoring those that face me directly with their fullest exposure.",
+      "Deer time their movement by my position, emerging to browse when I'm gentlest at dawn.",
+      "Beetles bask on lichen-covered stones, absorbing my energy before launching into flight."
+    ]
+  },
+  "beetle": {
+    "ACTION": [
+      "I thread under leaf litter, antennae tasting damp routes between fungus stem and root hair.",
+      "A bird shadow sweeps overhead; I freeze, shell tight, and wait for danger to pass.",
+      "I climb mushroom stems to feed on gills, dusting myself with spores for later dispersal.",
+      "Ants regard me with suspicion; I move slowly to signal I'm no threat to their trails.",
+      "Pine needles form tunnels I navigate, their resin scent marking safe corridors.",
+      "Deer hoofbeats shake the ground; I burrow deeper into leaf litter until stillness returns.",
+      "Cloud rain drives me under boulder overhang, where lichen provides textured shelter.",
+      "Sun warms my carapace; I emerge from shade to absorb heat before resuming my search.",
+      "Fern fronds brush my back as I pass underneath, their dampness clinging to my shell."
+    ]
+  },
+  "ant": {
+    "ACTION": [
+      "I scout ahead of the column, laying a faint chemical line that others will quickly amplify.",
+      "A twig blocks the trail; I circle, compare scents, and reroute traffic around the obstacle.",
+      "I encounter a beetle and tap antennae in cautious greeting before continuing my patrol.",
+      "Pine sap sticks to my legs; I pause to clean them, using mandibles to scrape the resin away.",
+      "Mushroom toxins register on my antennae; I mark the area as dangerous for foragers.",
+      "Deer movement crushes part of our trail; I frantically re-establish scent markers in its wake.",
+      "Cloud shadow confuses my navigation briefly; I recalibrate using the sun's polarized signature.",
+      "Boulder surface proves too steep; I signal others to find a route around its base instead.",
+      "Lichen makes poor footing; I divert the column to more stable ground where grip is certain."
+    ]
+  },
+  "moss": {
+    "ACTION": [
+      "I spread across boulder's face, slowly dissolving stone into soil with patient acids.",
+      "Pine needles settle on me, and I cushion them into soft decay for future growth.",
+      "Deer hooves compress me, then I spring back, holding moisture in my spongy body.",
+      "Ants nest in my depths; I provide insulation while they aerate the soil beneath me.",
+      "Cloud mist feeds me most; I drink directly from air when rain cannot reach the canopy floor.",
+      "Beetles burrow through my layers, mixing organic matter as they hunt for smaller prey.",
+      "Sun dries my surface by midday; I curl tight and wait for evening dew to revive.",
+      "Mushroom spores land and germinate in my dampness, our filaments interweaving below.",
+      "Fern roots anchor through me, both of us cooperating to hold the hillside stable."
+    ]
+  },
+  "spider": {
+    "ACTION": [
+      "I string silk between pine branches, calculating geometry in the evening light.",
+      "A beetle stumbles into my web; I rush forward, testing whether to wrap or release.",
+      "Ants march below my anchor points; I've learned to avoid their aggressive patrols.",
+      "Deer brush past and tear my web apart; I begin repairs before the sun rises.",
+      "Moths flutter near at dusk; I wait motionless, legs sensing every vibration on silk.",
+      "Cloud moisture beads on my threads, making the web visible and fragile in morning.",
+      "Sun warms my hunting blind; I emerge to strengthen guy-lines before prey arrives.",
+      "Mushroom spores drift through my web like dust; I clean them away to maintain trap efficiency.",
+      "Fern fronds offer shelter; I build my daytime retreat in their dense, protective curl."
+    ]
+  },
+  "owl": {
+    "ACTION": [
+      "I rotate my head, triangulating on a beetle's scrape against bark far below.",
+      "Pine branches support my weight as I wait, watching deer paths for smaller travelers.",
+      "Ants are beneath my notice tonight; I scan for fur and feather, not carapace.",
+      "Cloud shadow helps conceal me; I time my strike for when moonlight breaks through gaps. [EATS:beetle]",
+      "Deer startle at my sudden launch; their alarm calls echo as I pursue different prey.",
+      "Sun's departure triggers my waking; I stretch wings and test the darkening thermals.",
+      "Mushrooms mark rotting logs where mice forage; I memorize these hunting grounds by scent.",
+      "Spider webs glint in my path; I bank around them, respecting another predator's work.",
+      "Ferns rustle below as something small moves through; I drop silently and strike. [EATS:ant]"
+    ]
+  },
+  "squirrel": {
+    "ACTION": [
+      "I leap between pine branches, claws gripping bark as I scold intruders below.",
+      "Ants-nest entrance tempts me, but I've learned their bites aren't worth the larvae inside.",
+      "Mushrooms smell wrong; I bite once, spit it out, and return to my cache of pine seeds.",
+      "Boulder provides a high vantage; I pause there to scan for owl shadows overhead.",
+      "Cloud cover makes me bolder; I descend to forest floor when aerial predators can't see.",
+      "Deer ignore me completely; I've grown accustomed to their ancient, plodding presence.",
+      "Beetles crunch in my jaws occasionally, but I prefer the richness of blueberries and nuts.",
+      "Sun angle tells me when to return to my nest; I navigate by light and landmark memory.",
+      "Fern fronds conceal my buried caches; I test the soil, remembering where I stored seeds."
+    ]
+  },
+  "stream": {
+    "ACTION": [
+      "I flow around boulder's base, patient erosion carving new paths through centuries.",
+      "Pine roots drink from my edges, stabilizing banks while I feed their enormous thirst.",
+      "Ants avoid my flooding pulses; they relocate nests to higher ground after heavy rain.",
+      "Mushrooms release spores that drift downstream on my surface, colonizing new territory.",
+      "Cloud rain swells me suddenly; I rise and reclaim floodplain, reshaping the forest floor.",
+      "Deer visit at dawn and dusk; their tracks in mud mark the rhythm of their drinking.",
+      "Beetles skim my surface tension, some drowning, others using me as a highway downstream.",
+      "Sun warms my shallow pools; I release mist that feeds moss and lichen in the canopy.",
+      "Ferns trace my course, their presence indicating where my moisture reaches soil deeply."
+    ]
+  },
+  "moth": {
+    "ACTION": [
+      "I navigate by moonlight filtered through pine canopy, wings dusty with pollen and spores.",
+      "Spider webs are invisible at night; I blunder into silk and thrash free desperately.",
+      "Ants don't hunt after dark, so I land near their nest to feed on aphid honeydew.",
+      "Mushroom scent draws me close; I deposit eggs on gills, ensuring larvae will have food.",
+      "Cloud obscures the moon; I spiral confused until finding the North Star's steady bearing.",
+      "Deer breath in the darkness startles me; I flutter away from their massive, warm bulk.",
+      "Beetles compete for the same night-blooming flowers; we jostle for nectar in the dark.",
+      "Sun's first rays send me diving for cover under boulder overhangs and peeling bark.",
+      "Owl calls freeze me mid-flight; I drop into ferns and press flat, waiting for danger to pass."
+    ]
+  },
+  "shadow": {
+    "ACTION": [
+      "I stretch long across the forest floor as sun dips low, erasing detail and contrast.",
+      "Trees shift their shade and I follow, darkening whatever light tries to claim.",
+      "Owl hunts within my cover; I make the predator invisible to unsuspecting prey.",
+      "Lichen grows best where I linger longest, sheltered from sun's harsh desiccation.",
+      "Ant trails disappear in my depths; they navigate by scent when vision fails them.",
+      "Cloud passing overhead erases me briefly; I flicker between existence and absence.",
+      "Deer rest in my coolness during hot afternoons, grateful for the temperature relief.",
+      "Pine casts me in sharp angles; I trace the geometry of branches on moss below.",
+      "Moth emerges when I dominate the forest; we are both creatures of diminished light."
+    ]
+  },
+  "earth": {
+    "ACTION": [
+      "I accept fallen matter and transform it slowly into nourishment for roots that probe.",
+      "Rain soaks into my depths, and I hold moisture for the dry days ahead.",
+      "Moss blankets my surface, protecting me from erosion while aerating my layers.",
+      "Ants-nest tunnels riddle my body; their excavations mix and enrich my composition.",
+      "Fern roots bind me together, preventing the hillside from sliding after heavy storms.",
+      "Deer hooves compact me on well-worn paths; I grow dense and impenetrable there.",
+      "Mushroom filaments thread through me invisibly, breaking down what I cannot digest alone.",
+      "Pine needles acidify me over decades; I adapt my chemistry to what falls from above.",
+      "Stream erodes my banks each spring; I yield to water's patient insistence."
+    ]
+  },
+  "sapling": {
+    "ACTION": [
+      "I reach upward between older trees, competing for scraps of light that break through.",
+      "My bark hardens slowly; each season teaches me to withstand wind and browsing animals.",
+      "Moth larvae feed on my tender leaves; I tolerate small losses to build resilience.",
+      "Spider anchors web to my flexible branches; we both bend together when wind blows.",
+      "Boulder beside me radiates warmth at night; I grow slightly crooked, leaning toward heat.",
+      "Deer browse my lower shoots regularly; I respond by growing thornier, more defensive.",
+      "Mushrooms fruit near my roots; we trade sugars and minerals through hidden networks.",
+      "Shadow crosses me at predictable hours; I track sun's arc and adjust my lean accordingly.",
+      "Flower blooms nearby attract pollinators; some visit me too, carrying pollen from elsewhere."
+    ]
+  },
+  "oak": {
+    "ACTION": [
+      "I drop acorns in autumn, seeding the forest floor with potential futures of myself.",
+      "My branches host entire ecosystems; I am more than tree, I am community scaffold.",
+      "Ants-nest thrives at my base; my fallen leaves provide material for their chambers.",
+      "Deer shelter under my canopy during storms; I've stood through worse than this wind.",
+      "Stream flows near my roots; I drink deeply, anchoring the bank with extensive growth.",
+      "Squirrels cache acorns in my bark crevices, forgetting some, inadvertently planting my offspring.",
+      "Moss covers my north side thickly; I provide stable substrate for generations of growth.",
+      "Spider webs span between my limbs like guy-wires; I support hundreds of silk architects.",
+      "Sun's angle shifts with seasons; I extend branches toward the southern exposure strategically."
+    ]
+  },
+  "flower": {
+    "ACTION": [
+      "I unfold petals at dawn, advertising nectar to any pollinator desperate enough to visit.",
+      "My bloom is brief but essential; I rush to seed before deer or frost can claim me.",
+      "Squirrel investigates my roots, digging nearby; I tremble but remain rooted firmly.",
+      "Mushroom spores settle on my leaves; I shed them quickly before fungal infection spreads.",
+      "Sapling shades me partially; I tilt toward available light, maximizing photosynthesis hours.",
+      "Beetle lands heavily on my petals; I accept the visit, hoping pollen transfers successfully.",
+      "Moth arrives at dusk when others ignore me; night-blooming is my competitive advantage.",
+      "Cloud shadow dims my urgency briefly; I rest, conserving energy for the next bright interval.",
+      "Earth beneath me is rich with decay; my roots feast on nutrients from those who came before.",
+      "First frost arrives early; my petals blacken and curl as life retreats to roots. [WITHERS]"
     ]
   }
 }

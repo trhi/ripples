@@ -6,7 +6,35 @@ let isAutoplay = false;
 let auditLog = [];
 let bpm = 3;
 let autoplayInterval = null;
-const MAX_ENTITIES = 33;
+const MAX_ENTITIES = 13;
+
+// Ecological Trigger System:
+// ===========================
+// When users execute actions, the LLM-generated worldtext is automatically checked for
+// special markers that cause dynamic ecosystem changes. These triggers are embedded in
+// the natural language output and then stripped from display.
+//
+// Available Triggers:
+// - [EATS:entityId] - actor consumes the target entity (removes it from grid)
+// - [DIES] - actor dies and is removed from the grid
+// - [FLEES] - actor leaves the scene (removed from grid)
+// - [WITHERS] - actor gradually disappears (removed from grid)
+// - [SPAWNS:entityId] - creates a new entity near the actor
+//
+// Execution Flow:
+// 1. User selects entity and action → triggerRipple() executes
+// 2. LLM generates worldtext (Ollama → OpenAI → procedural fallback)
+// 3. parseEcologicalTriggers() scans the generated text for markers
+// 4. If found, executeEcologicalActions() runs them with 1s delays between each
+// 5. displayWorldtext() strips markers and shows clean prose to user
+// 6. Grid updates dynamically as entities appear/disappear
+//
+// Note: Triggers only fire when actions are EXECUTED by the user, not when latent
+// actions are regenerated in the background. This prevents unwanted cascade effects.
+//
+// The LLMs are prompted to include these markers sparingly (10-20% of actions) to
+// create ecological drama: predators eating prey, plants spawning offspring, weak
+// entities dying or fleeing from threats.
 
 // Load variations from JSON file
 let textVariations = null;
@@ -21,114 +49,98 @@ const latentLibrary = {
     forest: {
         name: 'DEEP FOREST',
         baseline: 'Moss blankets the ground. Light filters through a canopy of needles.',
-        grid: { cols: 8, rows: 6, background: 'forest-green' },
+        grid: { cols: 6, rows: 4, background: 'forest-green' },
         entities: [
-            { id: 'boulder', name: 'Ancient Boulder', type: 'inanimate', state: 'immobile', position: { x: 2, y: 3 }, icon: '🪨', adjacentTo: ['pine', 'mushroom'] },
-            { id: 'pine', name: 'Tall Pine', type: 'animate', state: 'growing', position: { x: 5, y: 1 }, icon: '🌲', adjacentTo: ['cloud', 'mushroom'] },
-            { id: 'ants-nest', name: 'Ants’ Nest', type: 'animate', state: 'foraging', position: { x: 1, y: 4 }, icon: '🏡', adjacentTo: ['boulder', 'mushroom'] },
-            { id: 'mushroom', name: 'Fungus Cap', type: 'animate', state: 'sporing', position: { x: 4, y: 3 }, icon: '🍄', adjacentTo: ['pine', 'ants-nest'] },
-            { id: 'cloud', name: 'Drifting Cloud', type: 'abstract', state: 'dissolving', position: { x: 6, y: 0 }, icon: '☁️', adjacentTo: ['pine'] },
-            { id: 'fern', name: 'Lush Fern', type: 'animate', state: 'unfurling', position: { x: 0, y: 2 }, icon: '🌿', adjacentTo: [] },
-            { id: 'blueberry', name: 'Wild Blueberry', type: 'animate', state: 'ripe', position: { x: 7, y: 4 }, icon: '🫐', adjacentTo: [] },
-            { id: 'deer', name: 'Forest Deer', type: 'animate', state: 'foraging', position: { x: 3, y: 5 }, icon: '🦌', adjacentTo: [] },
-            { id: 'lichen', name: 'Pale Lichen', type: 'animate', state: 'spreading', position: { x: 2, y: 0 }, icon: '🟩', adjacentTo: [] },
-            { id: 'sun', name: 'Midday Sun', type: 'abstract', state: 'radiant', position: { x: 7, y: 0 }, icon: '☀️', adjacentTo: ['cloud', 'pine'] },
-            { id: 'beetle', name: 'Ground Beetle', type: 'animate', state: 'scuttling', position: { x: 6, y: 3 }, icon: '🪲', adjacentTo: ['mushroom', 'fern'] },
-            { id: 'ant', name: 'Scout Ant', type: 'animate', state: 'searching', position: { x: 1, y: 1 }, icon: '🐜', adjacentTo: ['ants-nest', 'mushroom'] }
+            { id: 'owl', name: 'Night Owl', type: 'animate', state: 'hunting', position: { x: 0, y: 0 }, icon: '🦉', adjacentTo: [] },
+            { id: 'sun', name: 'Midday Sun', type: 'abstract', state: 'radiant', position: { x: 4, y: 0 }, icon: '☀️', adjacentTo: ['blueberry'] },
+            { id: 'pine', name: 'Towering Pine', type: 'animate', state: 'ancient', position: { x: 0, y: 1 }, icon: '🌲', adjacentTo: ['ant'] },
+            { id: 'ant', name: 'Scout Ant', type: 'animate', state: 'searching', position: { x: 1, y: 1 }, icon: '🐜', adjacentTo: ['pine', 'boulder', 'earth'] },
+            { id: 'boulder', name: 'Ancient Boulder', type: 'inanimate', state: 'immobile', position: { x: 2, y: 1 }, icon: '🪨', adjacentTo: ['ant', 'stream'] },
+            { id: 'blueberry', name: 'Wild Blueberry', type: 'animate', state: 'ripe', position: { x: 4, y: 1 }, icon: '🫐', adjacentTo: ['sun'] },
+            { id: 'earth', name: 'Dark Earth', type: 'inanimate', state: 'nourishing', position: { x: 1, y: 2 }, icon: '🟫', adjacentTo: ['ant'] },
+            { id: 'deer', name: 'Forest Deer', type: 'animate', state: 'foraging', position: { x: 3, y: 2 }, icon: '🦌', adjacentTo: [] },
+            { id: 'beetle', name: 'Ground Beetle', type: 'animate', state: 'crawling', position: { x: 5, y: 2 }, icon: '🪲', adjacentTo: [] },
+            { id: 'stream', name: 'Forest Stream', type: 'abstract', state: 'flowing', position: { x: 2, y: 3 }, icon: '💧', adjacentTo: ['boulder'] }
         ],
         latent: {
-            'boulder': {
+            'owl': {
                 ACTION: [
-                    'I shift imperceptibly toward the stream; gravity guides my slow, patient slide across moss and years.',
-                    'Roots clutch my underside, lifting and reshaping the earth around me; movement is resisted and negotiated.'
-                ]
-            },
-            'pine': {
-                ACTION: [
-                    'My needles angle toward shafts of light; each year I extend, knotting sky and earth with patient growth.',
-                    'A sudden gust tears a branch; I reroute sap and harden tissue, learning the cost of wind by wound.'
-                ]
-            },
-            'ants-nest': {
-                ACTION: [
-                    'Trails flare toward a fallen berry; workers ferry sugar back, the colony a braided network of taste and labor.',
-                    'A toad collapses into tunnels, scent and pressure overwhelming passages; pheromones spike to coordinate defense.'
-                ]
-            },
-            'mushroom': {
-                ACTION: [
-                    'I push my cap outward and fling spores into damp air; the forest learns my presence in drifting clouds.',
-                    'A beetle bores and enzymes flood; tissue collapses and reshapes as I digest the invader within.'
-                ]
-            },
-            'cloud': {
-                ACTION: [
-                    'Edges thin toward the warm ground; I condense and yearn to let salt and rain return to roots below.',
-                    'Thermals lift me; cool air strips weight and scent until the forest falls away and I drift alone.'
-                ]
-            },
-            'fern': {
-                ACTION: [
-                    'Fronds unfurl toward a dim sun, curling outward in green spirals seeking every thin beam of light.',
-                    'Shade deepens; my growth slows and green dims as needles settle upon me, weighing each leaflet.'
-                ]
-            },
-            'blueberry': {
-                ACTION: [
-                    'Berries ripen to a deep blue, holding sun-sweet heat beneath a fragile skin.',
-                    'Large paws shake branches; scent and sugar scatter as predators test the abundance I cradle.'
-                ]
-            },
-            'deer': {
-                ACTION: [
-                    'I ghost through fern and moss toward the scent of berries, muscles tuned to soft, careful steps.',
-                    'A sudden crack sends me skittering; heart thunders as I decide whether to flee or freeze.'
-                ]
-            },
-            'lichen': {
-                ACTION: [
-                    'I spread slowly over north bark, patient and thin, recording years in pale green rings.',
-                    'A sour haze settles the air; growth slows and I tense, folding metabolic pace down.'
+                    'I scan the ground for movement.',
+                    'I dive toward the beetle on the bark.'
                 ]
             },
             'sun': {
                 ACTION: [
-                    'I pour heat through needles and stone, drawing sap upward and waking hidden movement in the soil.',
-                    'Cloud edge crosses me; brightness flickers and the forest cools in brief, trembling patches of shade.'
-                ]
-            },
-            'beetle': {
-                ACTION: [
-                    'I thread under leaf litter, antennae tasting damp routes between fungus stem and root hair.',
-                    'A bird shadow sweeps overhead; I freeze, shell tight, and wait for danger to pass.'
+                    'I pour heat onto the forest floor.',
+                    'I shift behind a cloud.'
                 ]
             },
             'ant': {
                 ACTION: [
-                    'I scout ahead of the column, laying a faint chemical line that others will quickly amplify.',
-                    'A twig blocks the trail; I circle, compare scents, and reroute traffic around the obstacle.'
+                    'I lay a scent trail toward food.',
+                    'I reroute the column around an obstacle.'
+                ]
+            },
+            'boulder': {
+                ACTION: [
+                    'I settle deeper into the earth.',
+                    'I resist the stream\'s pressure.'
+                ]
+            },
+            'blueberry': {
+                ACTION: [
+                    'I ripen my berries.',
+                    'I drop seeds onto the soil.'
+                ]
+            },
+            'earth': {
+                ACTION: [
+                    'I absorb rainwater.',
+                    'I release nutrients to roots.'
+                ]
+            },
+            'deer': {
+                ACTION: [
+                    'I move toward the berry bush.',
+                    'I freeze at a sudden sound.'
+                ]
+            },
+            'stream': {
+                ACTION: [
+                    'I carve into the stone.',
+                    'I carry a leaf downstream.'
+                ]
+            },
+            'pine': {
+                ACTION: [
+                    'I drop needles onto the forest floor.',
+                    'I spread my branches wider.'
+                ]
+            },
+            'beetle': {
+                ACTION: [
+                    'I crawl beneath fallen leaves.',
+                    'I burrow into soft moss.'
                 ]
             }
         },
 
         adjacencyRules: {
-            'boulder': ['pine', 'mushroom'],
-            'pine': ['cloud', 'mushroom'],
-            'ants-nest': ['boulder', 'mushroom'],
-            'mushroom': ['pine', 'ants-nest'],
-            'cloud': ['pine'],
-            'fern': [],
-            'blueberry': [],
+            'owl': [],
+            'sun': ['blueberry'],
+            'pine': ['ant'],
+            'ant': ['pine', 'boulder', 'earth'],
+            'boulder': ['ant', 'stream'],
+            'blueberry': ['sun'],
+            'earth': ['ant'],
             'deer': [],
-            'lichen': [],
-            'sun': ['cloud', 'pine'],
-            'beetle': ['mushroom', 'fern'],
-            'ant': ['ants-nest', 'mushroom']
+            'beetle': [],
+            'stream': ['boulder']
         },
         ambientBehaviors: [
-            { entity: 'cloud', vector: 'ACTION', index: 1, probability: 0.4 },
-            { entity: 'ants-nest', vector: 'ACTION', index: 0, probability: 0.3 },
-            { entity: 'pine', vector: 'ACTION', index: 0, probability: 0.3 }
+            { entity: 'owl', vector: 'ACTION', index: 1, probability: 0.4 },
+            { entity: 'stream', vector: 'ACTION', index: 0, probability: 0.3 },
+            { entity: 'sun', vector: 'ACTION', index: 0, probability: 0.3 }
         ]
     }
 };
@@ -230,6 +242,20 @@ function renderEntities() {
             cell.classList.add('selected');
         }
     });
+    updateCastDisplay();
+}
+
+function updateCastDisplay() {
+    const castElem = document.getElementById('castEmojis');
+    if (!castElem || !currentScenario) return;
+    
+    castElem.innerHTML = '';
+    currentScenario.entities.forEach(ent => {
+        const span = document.createElement('span');
+        span.textContent = ent.icon || '⚫';
+        span.title = ent.name;
+        castElem.appendChild(span);
+    });
 }
 
 function rebuildEntityPool() {
@@ -312,7 +338,7 @@ function updateLatentPanel() {
     }
 }
 
-async function triggerRipple(vector, entId=null) {
+async function triggerRipple(vector, entId=null, preselectedText=null) {
     // allow calling with explicit entity id so we don't have to change selectedEntity
     if (!entId) {
         if (!selectedEntity) return;
@@ -327,7 +353,33 @@ async function triggerRipple(vector, entId=null) {
     } else if (typeof vector === 'string') {
         vecName = vector;
     }
-    const description = await generateWorldtext(currentScenario, entId, vecName, vecIndex);
+    
+    // Use preselected text if provided (from user's actual selection)
+    // Otherwise generate new text for propagated entities
+    let description;
+    if (preselectedText) {
+        description = preselectedText;
+        console.log('[triggerRipple] Using preselected text:', description);
+        console.log('[triggerRipple] Text length:', description.length);
+        console.log('[triggerRipple] Contains [SPAWNS]?:', description.includes('[SPAWNS'));
+        console.log('[triggerRipple] Contains [spawns]?:', description.toLowerCase().includes('[spawns'));
+    } else {
+        description = await generateWorldtext(currentScenario, entId, vecName, vecIndex);
+        console.log('[triggerRipple] Generated new text:', description);
+    }
+    
+    // Check for ecological triggers in the text
+    const triggers = parseEcologicalTriggers(description, entId);
+    if (triggers.length > 0) {
+        console.log('[Ecology] Found triggers:', triggers);
+        executeEcologicalActions(triggers);
+    } else {
+        console.log('[Ecology] No triggers found in text');
+    }
+    
+    // Auto-spawn entities mentioned in text that don't exist yet
+    autoSpawnMentionedEntities(description, entId);
+    
     // show worldtext with clickable entity names
     displayWorldtext(description);
     // propagate to adjacent using simple intensity decay
@@ -344,8 +396,18 @@ async function triggerRipple(vector, entId=null) {
 
 
 function displayWorldtext(text) {
+    // Strip out ecological trigger markers before displaying
+    // Use flexible patterns to match various formatting (spaces, hyphens, case)
+    let cleanedText = text
+        .replace(/\[EATS?:\s*[\w-]+\s*\]/gi, '')  // Matches [EAT:x] or [EATS:x] with optional spaces
+        .replace(/\[DIES?\]/gi, '')  // Matches [DIE] or [DIES]
+        .replace(/\[FLEES?\]/gi, '')  // Matches [FLEE] or [FLEES]
+        .replace(/\[WITHERS?\]/gi, '')  // Matches [WITHER] or [WITHERS]
+        .replace(/\[SPAWNS?:\s*[\w-]+\s*\]/gi, '')  // Matches [SPAWN:x] or [SPAWNS:x] with optional spaces
+        .trim();
+    
     // replace entity names with clickable spans
-    let html = text;
+    let html = cleanedText;
     if (currentScenario) {
         currentScenario.entities.forEach(ent => {
             const name = ent.name;
@@ -467,6 +529,8 @@ async function regenerateRelevant(baseId, vector) {
         if (!currentScenario.latent[nid]) currentScenario.latent[nid] = {};
         if (!currentScenario.latent[nid].ACTION) currentScenario.latent[nid].ACTION = [];
         const newText = await generateWorldtext(currentScenario, nid, vecName, vecIndex);
+        // Note: We don't execute ecological triggers here - only when user
+        // actually selects and executes an action via triggerRipple()
         currentScenario.latent[nid].ACTION[vecIndex] = newText;
     }
     // if selected entity is among neighbors, refresh panel
@@ -511,21 +575,24 @@ async function lockAndPlay() {
         });
     }
     const startId = selectedEntity.id;
+    const selectedText = initiatingInfo?.text || null;
     const visited = new Set();
-    const queue = [{id: startId, delay: 0}];
+    const queue = [{id: startId, delay: 0, isStart: true}];
     let maxDelay = 0;
     while(queue.length) {
-        const {id, delay} = queue.shift();
+        const {id, delay, isStart} = queue.shift();
         visited.add(id);
         maxDelay = Math.max(maxDelay, delay);
         setTimeout(() => {
-            // do not change selection during propagation
-            triggerRipple(pendingVector, id);
+            // For the starting entity, use the actual selected text
+            // For propagated entities, generate new text
+            const textToUse = (isStart && selectedText) ? selectedText : null;
+            triggerRipple(pendingVector, id, textToUse);
         }, delay);
         const neighbors = currentScenario.adjacencyRules?.[id] || [];
         for(const nid of neighbors) {
             if(!visited.has(nid)) {
-                queue.push({id: nid, delay: delay + 500});
+                queue.push({id: nid, delay: delay + 500, isStart: false});
             }
         }
     }
@@ -557,7 +624,12 @@ async function refreshAllLatentsCompletely() {
             tasks.push((async (idx) => {
                 const newText = await generateWorldtext(currentScenario, id, 'ACTION', idx);
                 console.log('[regen]', id, 'ACTION', idx, newText);
-                currentScenario.latent[id].ACTION[idx] = newText;
+                // Note: We don't execute ecological triggers here - only when user
+                // actually selects and executes an action via triggerRipple()
+                // Safety check: entity might have been removed during async generation
+                if (currentScenario.latent[id] && currentScenario.latent[id].ACTION) {
+                    currentScenario.latent[id].ACTION[idx] = newText;
+                }
             })(i));
         }
     }
@@ -575,9 +647,20 @@ function addRandomEntity() {
         { id: 'blueberry', name: 'Wild Blueberry', type: 'animate', state: 'ripe', icon: '🫐', adjacentTo: [] },
         { id: 'deer', name: 'Forest Deer', type: 'animate', state: 'foraging', icon: '🦌', adjacentTo: [] },
         { id: 'lichen', name: 'Pale Lichen', type: 'animate', state: 'spreading', icon: '🟩', adjacentTo: [] },
-        { id: 'squirrel', name: 'Squirrel', type: 'animate', state: 'scurrying', icon: '🐿️', adjacentTo: [] },
+        { id: 'squirrel', name: 'Red Squirrel', type: 'animate', state: 'foraging', icon: '🐿️', adjacentTo: [] },
+        { id: 'stream', name: 'Forest Stream', type: 'abstract', state: 'flowing', icon: '💧', adjacentTo: [] },
+        { id: 'moss', name: 'Soft Moss', type: 'animate', state: 'spreading', icon: '🌱', adjacentTo: [] },
+        { id: 'spider', name: 'Web Spider', type: 'animate', state: 'weaving', icon: '🕷️', adjacentTo: [] },
+        { id: 'owl', name: 'Night Owl', type: 'animate', state: 'hunting', icon: '🦉', adjacentTo: [] },
+        { id: 'moth', name: 'Luna Moth', type: 'animate', state: 'fluttering', icon: '🦋', adjacentTo: [] },
         { id: 'rock', name: 'Loose Rock', type: 'inanimate', state: 'resting', icon: '🪨', adjacentTo: [] },
-        { id: 'stream', name: 'Forest Stream', type: 'abstract', state: 'flowing', icon: '💧', adjacentTo: [] }
+        { id: 'fox', name: 'Red Fox', type: 'animate', state: 'prowling', icon: '🦊', adjacentTo: [] },
+        { id: 'salamander', name: 'Salamander', type: 'animate', state: 'hiding', icon: '🦎', adjacentTo: [] },
+        { id: 'shadow', name: 'Forest Shadow', type: 'abstract', state: 'shifting', icon: '🌑', adjacentTo: [] },
+        { id: 'earth', name: 'Dark Earth', type: 'inanimate', state: 'nourishing', icon: '🟫', adjacentTo: [] },
+        { id: 'sapling', name: 'Young Sapling', type: 'animate', state: 'reaching', icon: '🌱', adjacentTo: [] },
+        { id: 'oak', name: 'Ancient Oak', type: 'animate', state: 'towering', icon: '🌳', adjacentTo: [] },
+        { id: 'flower', name: 'Wildflower', type: 'animate', state: 'blooming', icon: '🌸', adjacentTo: [] }
     ];
     // pick an unused entry
     const available = pool.filter(p => !currentScenario.entities.find(e => e.id === p.id));
@@ -603,7 +686,415 @@ function addRandomEntity() {
     renderEntities();
 }
 
+function removeEntity(entityId) {
+    if (!currentScenario) {
+        console.error(`[removeEntity] No current scenario`);
+        return;
+    }
+    
+    // Normalize entity ID for case-insensitive lookup
+    const normalizedId = entityId.toLowerCase();
+    const idx = currentScenario.entities.findIndex(e => e.id.toLowerCase() === normalizedId);
+    
+    if (idx === -1) {
+        console.warn(`[removeEntity] Entity '${entityId}' not found - may have already been removed or ID mismatch`);
+        console.warn(`[removeEntity] Current entities:`, currentScenario.entities.map(e => e.id).join(', '));
+        return;
+    }
+    
+    const entity = currentScenario.entities[idx];
+    const actualId = entity.id; // Use the actual ID from the found entity
+    console.log(`[removeEntity] Removing entity: ${actualId} (${entity.name})`);
+    
+    // Remove from entities array
+    currentScenario.entities.splice(idx, 1);
+    
+    // Clean up adjacency rules (use actual ID)
+    delete currentScenario.adjacencyRules[actualId];
+    // Remove references in other entities' adjacency lists
+    Object.keys(currentScenario.adjacencyRules).forEach(key => {
+        currentScenario.adjacencyRules[key] = currentScenario.adjacencyRules[key].filter(id => id.toLowerCase() !== normalizedId);
+    });
+    
+    // Clean up latent data (use actual ID)
+    delete currentScenario.latent[actualId];
+    
+    // If this was the selected entity, deselect
+    if (selectedEntity && selectedEntity.id.toLowerCase() === normalizedId) {
+        selectedEntity = null;
+        updateLatentPanel();
+    }
+    
+    rebuildEntityPool();
+    renderEntities();
+    
+    console.log(`[removeEntity] Successfully removed ${actualId}. Remaining entities:`, currentScenario.entities.map(e => e.id).join(', '));
+}
+
+function autoSpawnMentionedEntities(text, actorEntityId) {
+    if (!currentScenario || !text) return;
+    
+    // List of all possible entity IDs (from spawn pool + emoji map)
+    const knownEntityIds = [
+        'fox', 'wolf', 'bear', 'rabbit', 'squirrel', 'deer',
+        'bird', 'crow', 'hawk', 'owl', 'snake',
+        'frog', 'toad', 'lizard', 'salamander',
+        'beetle', 'ant', 'spider', 'moth', 'butterfly',
+        'bee', 'wasp', 'fly', 'mosquito',
+        'mouse', 'rat', 'bat', 'raccoon',
+        'tree', 'pine', 'oak', 'willow', 'birch',
+        'flower', 'rose', 'daisy', 'tulip', 'sunflower',
+        'grass', 'fern', 'moss', 'lichen', 'algae',
+        'mushroom', 'fungus', 'toadstool',
+        'vine', 'ivy', 'bramble', 'bush', 'shrub',
+        'sapling', 'sprout', 'seedling',
+        'berry', 'blueberry', 'raspberry', 'blackberry',
+        'sun', 'moon', 'star', 'cloud',
+        'rain', 'snow', 'frost', 'ice',
+        'wind', 'mist', 'fog',
+        'stream', 'river', 'pond', 'pool',
+        'rock', 'stone', 'boulder', 'pebble',
+        'earth', 'soil', 'dirt', 'mud',
+        'shadow', 'darkness', 'light',
+        'fire', 'ember', 'spark',
+        'log', 'branch', 'twig',
+        'leaf', 'needle'
+    ];
+    
+    // Normalize text to lowercase for matching
+    const lowerText = text.toLowerCase();
+    
+    // Get current entity IDs (normalized)
+    const currentEntityIds = currentScenario.entities.map(e => e.id.toLowerCase());
+    
+    // Find mentioned entities that don't exist yet
+    const entitiesToSpawn = [];
+    for (const entityId of knownEntityIds) {
+        // Skip if entity already exists
+        if (currentEntityIds.includes(entityId)) continue;
+        
+        // Skip if it's the base ID of an existing numbered variant (e.g., skip 'blueberry' if 'blueberry-2' exists)
+        if (currentEntityIds.some(id => id.startsWith(entityId + '-'))) continue;
+        
+        // Check if entity name appears in text as a word boundary
+        const regex = new RegExp(`\\b${entityId}\\b`, 'i');
+        if (regex.test(lowerText)) {
+            console.log(`[AutoSpawn] Found mention of '${entityId}' in text`);
+            entitiesToSpawn.push(entityId);
+        }
+    }
+    
+    // Spawn each mentioned entity
+    for (const entityId of entitiesToSpawn) {
+        console.log(`[AutoSpawn] Spawning ${entityId} near ${actorEntityId}`);
+        spawnEntity(entityId, actorEntityId);
+    }
+    
+    if (entitiesToSpawn.length > 0) {
+        rebuildEntityPool();
+        renderEntities();
+    }
+}
+
+function createDynamicEntity(entityId) {
+    // Generate entity metadata based on ID
+    // This allows LLMs to spawn entities not in the predefined pool
+    
+    // Infer type from common patterns
+    let type = 'animate';
+    let state = 'present';
+    
+    // Abstract entities (weather, light, concepts)
+    if (['cloud', 'shadow', 'mist', 'fog', 'wind', 'rain', 'snow', 'light', 'darkness', 'moon', 'star'].includes(entityId)) {
+        type = 'abstract';
+        state = 'shifting';
+    }
+    // Inanimate entities (objects, terrain)
+    else if (['rock', 'stone', 'boulder', 'log', 'branch', 'soil', 'dust', 'water', 'ice'].includes(entityId)) {
+        type = 'inanimate';
+        state = 'resting';
+    }
+    // Living things default to animate
+    else {
+        type = 'animate';
+        state = 'active';
+    }
+    
+    // Generate appropriate emoji based on entity name
+    const emojiMap = {
+        // Animals
+        'fox': '🦊', 'wolf': '🐺', 'bear': '🐻', 'rabbit': '🐇', 'squirrel': '🐿️',
+        'bird': '🐦', 'crow': '🐦‍⬛', 'hawk': '🦅', 'owl': '🦉', 'snake': '🐍',
+        'frog': '🐸', 'toad': '🐸', 'lizard': '🦎', 'salamander': '🦎',
+        'beetle': '🪲', 'ant': '🐜', 'spider': '🕷️', 'moth': '🦋', 'butterfly': '🦋',
+        'bee': '🐝', 'wasp': '🐝', 'fly': '🪰', 'mosquito': '🦟',
+        'mouse': '🐁', 'rat': '🐀', 'bat': '🦇', 'raccoon': '🦝',
+        // Plants
+        'tree': '🌳', 'pine': '🌲', 'oak': '🌳', 'willow': '🌳', 'birch': '🌳',
+        'flower': '🌸', 'rose': '🌹', 'daisy': '🌼', 'tulip': '🌷', 'sunflower': '🌻',
+        'grass': '🌾', 'fern': '🌿', 'moss': '🌱', 'lichen': '🟩', 'algae': '🟢',
+        'mushroom': '🍄', 'fungus': '🍄', 'toadstool': '🍄',
+        'vine': '🌿', 'ivy': '🌿', 'bramble': '🌿', 'bush': '🌳', 'shrub': '🌳',
+        'sapling': '🌱', 'sprout': '🌱', 'seedling': '🌱',
+        'berry': '🫐', 'blueberry': '🫐', 'raspberry': '🍓', 'blackberry': '🫐',
+        // Elements & Environment
+        'sun': '☀️', 'moon': '🌙', 'star': '⭐', 'cloud': '☁️',
+        'rain': '🌧️', 'snow': '❄️', 'frost': '❄️', 'ice': '🧊',
+        'wind': '💨', 'mist': '🌫️', 'fog': '🌫️',
+        'stream': '💧', 'river': '🌊', 'pond': '💧', 'pool': '💧',
+        'rock': '🪨', 'stone': '🪨', 'boulder': '🪨', 'pebble': '🪨',
+        'earth': '🟫', 'soil': '🟫', 'dirt': '🟫', 'mud': '🟤',
+        'shadow': '🌑', 'darkness': '🌑', 'light': '✨',
+        'fire': '🔥', 'ember': '🔥', 'spark': '✨',
+        'log': '🪵', 'branch': '🪵', 'twig': '🪵',
+        'leaf': '🍃', 'needle': '🌿'
+    };
+    
+    const icon = emojiMap[entityId.toLowerCase()] || '⚫'; // Default to circle
+    
+    // Create readable name (capitalize and handle hyphens)
+    const name = entityId
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    
+    return {
+        id: entityId,
+        name: name,
+        type: type,
+        state: state,
+        icon: icon,
+        adjacentTo: []
+    };
+}
+
+function spawnEntity(entityId, nearEntityId=null) {
+    if (!currentScenario) {
+        console.error('[spawnEntity] No current scenario');
+        return;
+    }
+    
+    if (currentScenario.entities.length >= MAX_ENTITIES) {
+        console.warn(`[spawnEntity] Cannot spawn ${entityId} - grid full (${currentScenario.entities.length}/${MAX_ENTITIES})`);
+        return;
+    }
+    
+    // Normalize entity ID to lowercase for matching
+    const normalizedId = entityId.toLowerCase();
+    
+    // Allow spawning duplicate entities (e.g., blueberry can spawn another blueberry)
+    // Just check if we have room on the grid
+    
+    console.log(`[spawnEntity] Attempting to spawn: ${entityId}`);
+    
+    // Find entity definition in pool
+    const pool = [
+        { id: 'fern', name: 'Lush Fern', type: 'animate', state: 'unfurling', icon: '🌿', adjacentTo: [] },
+        { id: 'blueberry', name: 'Wild Blueberry', type: 'animate', state: 'ripe', icon: '🫐', adjacentTo: [] },
+        { id: 'berry', name: 'Wild Berry', type: 'animate', state: 'ripe', icon: '🫐', adjacentTo: [] },
+        { id: 'deer', name: 'Forest Deer', type: 'animate', state: 'foraging', icon: '🦌', adjacentTo: [] },
+        { id: 'lichen', name: 'Pale Lichen', type: 'animate', state: 'spreading', icon: '🟩', adjacentTo: [] },
+        { id: 'pine', name: 'Towering Pine', type: 'animate', state: 'ancient', icon: '🌲', adjacentTo: [] },
+        { id: 'squirrel', name: 'Red Squirrel', type: 'animate', state: 'foraging', icon: '🐿️', adjacentTo: [] },
+        { id: 'stream', name: 'Forest Stream', type: 'abstract', state: 'flowing', icon: '💧', adjacentTo: [] },
+        { id: 'moss', name: 'Soft Moss', type: 'animate', state: 'spreading', icon: '🌱', adjacentTo: [] },
+        { id: 'spider', name: 'Web Spider', type: 'animate', state: 'weaving', icon: '🕷️', adjacentTo: [] },
+        { id: 'owl', name: 'Night Owl', type: 'animate', state: 'hunting', icon: '🦉', adjacentTo: [] },
+        { id: 'moth', name: 'Luna Moth', type: 'animate', state: 'fluttering', icon: '🦋', adjacentTo: [] },
+        { id: 'mushroom', name: 'Forest Mushroom', type: 'animate', state: 'fruiting', icon: '🍄', adjacentTo: [] },
+        { id: 'fungus', name: 'Wild Fungus', type: 'animate', state: 'growing', icon: '🍄', adjacentTo: [] },
+        { id: 'rock', name: 'Loose Rock', type: 'inanimate', state: 'resting', icon: '🪨', adjacentTo: [] },
+        { id: 'fox', name: 'Red Fox', type: 'animate', state: 'prowling', icon: '🦊', adjacentTo: [] },
+        { id: 'salamander', name: 'Salamander', type: 'animate', state: 'hiding', icon: '🦎', adjacentTo: [] },
+        { id: 'shadow', name: 'Forest Shadow', type: 'abstract', state: 'shifting', icon: '🌑', adjacentTo: [] },
+        { id: 'earth', name: 'Dark Earth', type: 'inanimate', state: 'nourishing', icon: '🟫', adjacentTo: [] },
+        { id: 'sapling', name: 'Young Sapling', type: 'animate', state: 'reaching', icon: '🌱', adjacentTo: [] },
+        { id: 'oak', name: 'Ancient Oak', type: 'animate', state: 'towering', icon: '🌳', adjacentTo: [] },
+        { id: 'flower', name: 'Wildflower', type: 'animate', state: 'blooming', icon: '🌸', adjacentTo: [] },
+        { id: 'bird', name: 'Forest Bird', type: 'animate', state: 'singing', icon: '🐦', adjacentTo: [] },
+        { id: 'rabbit', name: 'Wild Rabbit', type: 'animate', state: 'hopping', icon: '🐇', adjacentTo: [] },
+        { id: 'snake', name: 'Garden Snake', type: 'animate', state: 'slithering', icon: '🐍', adjacentTo: [] },
+        { id: 'cloud', name: 'Drifting Cloud', type: 'abstract', state: 'floating', icon: '☁️', adjacentTo: [] },
+        { id: 'beetle', name: 'Ground Beetle', type: 'animate', state: 'crawling', icon: '🪲', adjacentTo: [] },
+        { id: 'ant', name: 'Forest Ant', type: 'animate', state: 'foraging', icon: '🐜', adjacentTo: [] }
+    ];
+    
+    // Look up entity definition (case-insensitive)
+    let entityDef = pool.find(p => p.id.toLowerCase() === normalizedId);
+    
+    // If entity not in predefined pool, create a dynamic entity definition
+    if (!entityDef) {
+        console.log(`[spawnEntity] Entity ${entityId} not in pool - creating dynamic entity`);
+        entityDef = createDynamicEntity(normalizedId);
+    } else {
+        console.log(`[spawnEntity] Found ${entityId} in pool: ${entityDef.name}`);
+    }
+    
+    // Position near the specified entity if provided, otherwise random
+    const cols = currentScenario.grid.cols || 8;
+    const rows = currentScenario.grid.rows || 6;
+    let pos;
+    
+    if (nearEntityId) {
+        const nearEntity = currentScenario.entities.find(e => e.id === nearEntityId);
+        if (nearEntity) {
+            // Try to find adjacent empty cell
+            const adjacentPositions = [
+                { x: nearEntity.position.x - 1, y: nearEntity.position.y },
+                { x: nearEntity.position.x + 1, y: nearEntity.position.y },
+                { x: nearEntity.position.x, y: nearEntity.position.y - 1 },
+                { x: nearEntity.position.x, y: nearEntity.position.y + 1 }
+            ].filter(p => p.x >= 0 && p.x < cols && p.y >= 0 && p.y < rows);
+            
+            const emptyAdjacent = adjacentPositions.filter(p => 
+                !currentScenario.entities.find(e => e.position.x === p.x && e.position.y === p.y)
+            );
+            
+            if (emptyAdjacent.length > 0) {
+                pos = emptyAdjacent[Math.floor(Math.random() * emptyAdjacent.length)];
+            }
+        }
+    }
+    
+    // Fallback to random position
+    if (!pos) {
+        let attempts = 0;
+        do {
+            pos = { x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows) };
+            attempts++;
+        } while (currentScenario.entities.find(e => e.position.x === pos.x && e.position.y === pos.y) && attempts < 100);
+        
+        if (attempts >= 100) {
+            console.error('[spawnEntity] Could not find empty position after 100 attempts');
+            return;
+        }
+    }
+    
+    // Create unique ID if an entity with this ID already exists
+    let uniqueId = entityDef.id;
+    if (currentScenario.entities.find(e => e.id === uniqueId)) {
+        // Find next available number suffix
+        let counter = 2;
+        while (currentScenario.entities.find(e => e.id === `${entityDef.id}-${counter}`)) {
+            counter++;
+        }
+        uniqueId = `${entityDef.id}-${counter}`;
+        console.log(`[spawnEntity] Entity ${entityDef.id} already exists, using unique ID: ${uniqueId}`);
+    }
+    
+    const newEnt = { ...entityDef, id: uniqueId, position: pos };
+    currentScenario.entities.push(newEnt);
+    
+    console.log(`[spawnEntity] Successfully spawned ${uniqueId} (${entityDef.name}) at position (${pos.x}, ${pos.y})`);
+    
+    // Add placeholder latent ACTION descriptions
+    currentScenario.latent[newEnt.id] = { ACTION: [
+        `The ${newEnt.name} considers moving toward something nearby in a simple way.`,
+        `The ${newEnt.name} senses a small resistance that might alter its path.`,
+        `The ${newEnt.name} contemplates a subtle change and holds still for now.`
+    ] };
+    currentScenario.adjacencyRules[newEnt.id] = [];
+    
+    rebuildEntityPool();
+    renderEntities();
+    
+    console.log(`[spawnEntity] Total entities now: ${currentScenario.entities.length}/${MAX_ENTITIES}`);
+}
+
+function parseEcologicalTriggers(text, actorId) {
+    // Parse text for ecological interaction markers
+    // Returns array of trigger objects
+    const triggers = [];
+    
+    console.log('[Parser] Scanning text:', text);
+    
+    // [EATS:entityId] - actor consumes target
+    // Allow optional spaces and hyphens in entity names
+    const eatsPattern = /\[EATS?:\s*([\w-]+)\s*\]/gi;
+    let match;
+    while ((match = eatsPattern.exec(text)) !== null) {
+        const target = match[1].trim();
+        console.log('[Parser] Found EATS trigger:', target);
+        triggers.push({ type: 'EATS', actor: actorId, target });
+    }
+    
+    // [DIES] - actor is removed
+    if (text.match(/\[DIES?\]/i)) {
+        console.log('[Parser] Found DIES trigger');
+        triggers.push({ type: 'DIES', actor: actorId });
+    }
+    
+    // [FLEES] - actor leaves scene
+    if (text.match(/\[FLEES?\]/i)) {
+        console.log('[Parser] Found FLEES trigger');
+        triggers.push({ type: 'FLEES', actor: actorId });
+    }
+    
+    // [WITHERS] - actor gradually disappears (alias for DIES)
+    if (text.match(/\[WITHERS?\]/i)) {
+        console.log('[Parser] Found WITHERS trigger');
+        triggers.push({ type: 'WITHERS', actor: actorId });
+    }
+    
+    // [SPAWNS:entityId] - creates new entity
+    const spawnsPattern = /\[SPAWNS?:\s*([\w-]+)\s*\]/gi;
+    console.log('[Parser] Checking for SPAWNS patterns...');
+    console.log('[Parser] Spawn regex test on text:', spawnsPattern.test(text));
+    // Reset regex after test
+    spawnsPattern.lastIndex = 0;
+    while ((match = spawnsPattern.exec(text)) !== null) {
+        const target = match[1].trim();
+        console.log('[Parser] Found SPAWNS trigger:', target);
+        console.log('[Parser] Full match:', match[0]);
+        triggers.push({ type: 'SPAWNS', actor: actorId, target });
+    }
+    
+    console.log('[Parser] Total triggers found:', triggers.length);
+    return triggers;
+}
+
+function executeEcologicalActions(triggers) {
+    // Execute parsed ecological triggers with delays for dramatic effect
+    console.log(`[Ecology] Executing ${triggers.length} triggers:`, triggers);
+    
+    triggers.forEach((trigger, index) => {
+        setTimeout(() => {
+            console.log(`[Ecology] Executing trigger ${index + 1}/${triggers.length}:`, trigger);
+            
+            switch(trigger.type) {
+                case 'EATS':
+                    console.log(`[Ecology] ${trigger.actor} is eating ${trigger.target}`);
+                    removeEntity(trigger.target);
+                    console.log(`[Ecology] ${trigger.target} has been removed (eaten by ${trigger.actor})`);
+                    break;
+                case 'DIES':
+                case 'FLEES':
+                case 'WITHERS':
+                    console.log(`[Ecology] ${trigger.actor} is ${trigger.type.toLowerCase()}`);
+                    removeEntity(trigger.actor);
+                    console.log(`[Ecology] ${trigger.actor} has been removed (${trigger.type})`);
+                    break;
+                case 'SPAWNS':
+                    console.log(`[Ecology] ${trigger.actor} is spawning ${trigger.target}`);
+                    const beforeCount = currentScenario.entities.length;
+                    spawnEntity(trigger.target, trigger.actor);
+                    const afterCount = currentScenario.entities.length;
+                    if (afterCount > beforeCount) {
+                        console.log(`[Ecology] ✓ ${trigger.target} successfully spawned by ${trigger.actor} (entities: ${beforeCount} → ${afterCount})`);
+                    } else {
+                        console.warn(`[Ecology] ✗ ${trigger.target} spawn failed (entities still: ${afterCount}, max: ${MAX_ENTITIES})`);
+                    }
+                    break;
+                default:
+                    console.error(`[Ecology] Unknown trigger type: ${trigger.type}`);
+            }
+        }, index * 1000); // Stagger actions by 1 second each
+    });
+}
+
 async function generateWorldtext(scenario, entityId, vector, index=0) {
+    console.log(`[Generate] Starting generation for ${entityId}, vector: ${vector}, index: ${index}`);
+    
     // vector expected to be 'ACTION' in the new model; index selects which action
     let latent = null;
     if (vector === 'ACTION') {
@@ -619,9 +1110,47 @@ async function generateWorldtext(scenario, entityId, vector, index=0) {
         }
     }
     
+    // Get current entity list to avoid referencing removed entities
+    const currentEntities = scenario.entities.map(e => e.id).join(', ');
+    const currentEntityNames = scenario.entities.map(e => `${e.id} (${e.name})`).join(', ');
+    
     // First, try local Ollama instance
+    console.log('[Generate] Attempting Ollama...');
     try {
-        const systemPrompt = `You are a RIPPLES worldtext generator. Follow the specification exactly: produce a total of 10-20 words in a **first-person** poetic description from the perspective of the given entity when the provided vector is applied. Use uncertainty markers and state-focused language. Do not write in third person.`;
+        const systemPrompt = `You are a RIPPLES worldtext generator. Generate a **first-person action statement** from the entity's perspective. 
+
+REQUIREMENTS:
+- If this entity is responding to another entity's action (see Initiating Action Text below):
+  * Start with a state declaration: "I am [affected by the action]."
+  * Example: If sun warmed the lichen → lichen starts with "I am warmed by the sun."
+  * Then continue: "And then I [what happens next]."
+- If generating initial action (no Initiating Action):
+  * DO NOT repeat the seed-action text provided - it already happened
+  * Continue with "and then..." to show what happens next
+- 1-2 sentences total
+- Direct, concrete actions - what the entity DOES, not feelings or thoughts
+- No poetic language, no uncertainty, no questioning
+- Use present tense ("I am", "I spread", "I flow")
+- ONLY reference entities that currently exist in the scenario (see entity list below)
+
+CRITICAL - ACTION DIVERSITY:
+When generating ActionIndex 0 vs ActionIndex 1, create DISTINCTLY DIFFERENT actions - almost opposite choices:
+- Active vs passive ("I hunt the ant" vs "I rest on a branch")
+- Aggressive vs defensive ("I chase" vs "I hide")
+- Expansive vs contractive ("I spread outward" vs "I pull inward")
+- Moving vs staying ("I flow downstream" vs "I pool in eddies")
+- Consuming vs producing ("I eat" vs "I spawn")
+
+ECOLOGICAL TRIGGERS - Use when action clearly involves these outcomes:
+- [EATS:entityId] - "and then I strike and eat the beetle. [EATS:beetle]" (ALWAYS include when explicitly eating/consuming)
+- [DIES] - "and then my roots snap. [DIES]" (entity dies/killed)
+- [FLEES] - "and then I bolt away. [FLEES]" (entity leaves permanently)
+- [WITHERS] - "and then frost kills me. [WITHERS]" (gradual death)
+- [SPAWNS:entityId] - "and then I drop spores. [SPAWNS:mushroom]" (creates new entity)
+
+IMPORTANT: If the action involves eating/consuming another entity, ALWAYS include [EATS:entityId]. If the entity dies, flees, or withers, include the appropriate trigger.
+
+You may invent new entities for SPAWNS (e.g., [SPAWNS:toad], [SPAWNS:fungus]) - the system creates them automatically.`;
         
         let contextSnippet = '';
         if (initiatingInfo && initiatingInfo.entityId && initiatingInfo.entityId !== entityId) {
@@ -630,7 +1159,7 @@ async function generateWorldtext(scenario, entityId, vector, index=0) {
                            `\nInitiating Action Text: ${initiatingInfo.text}`;
         }
         
-        let userPrompt = `Scenario: ${scenario.name}\nEntity: ${entityId}\nVector: ${vector}\nActionIndex: ${index}` + contextSnippet;
+        let userPrompt = `Scenario: ${scenario.name}\nEntity: ${entityId}\nVector: ${vector}\nActionIndex: ${index}\nCurrent Entities: ${currentEntityNames}` + contextSnippet;
         if (latent) {
             userPrompt += `\nSeed-action text: ${latent}`;
         }
@@ -650,16 +1179,21 @@ async function generateWorldtext(scenario, entityId, vector, index=0) {
         if (ollamaResp.ok) {
             const ollamaData = await ollamaResp.json();
             const text = ollamaData.response?.trim();
-            if (text && text !== latent) {
-                console.log('[Ollama] Generated text:', text);
+            if (text && text.length > 0) {
+                console.log('[Ollama] ✓ Success:', text);
                 return text;
+            } else {
+                console.warn('[Ollama] ✗ Empty response from Ollama');
             }
+        } else {
+            console.warn(`[Ollama] ✗ HTTP error: ${ollamaResp.status}`);
         }
     } catch (e) {
-        console.log('[Ollama] Not available, trying OpenAI...', e.message);
+        console.warn('[Ollama] ✗ Error:', e.message);
     }
     
     // Fall back to OpenAI via serverless endpoint
+    console.log('[Generate] Attempting OpenAI...');
     try {
         const resp = await fetch('/api/generate', {
             method: 'POST',
@@ -672,26 +1206,34 @@ async function generateWorldtext(scenario, entityId, vector, index=0) {
                 vector,
                 index,
                 latent,
-                initiatingInfo
+                initiatingInfo,
+                currentEntities: currentEntityNames
             })
         });
         
-        const data = await resp.json();
-        
-        // If API returned text successfully, use it
-        if (data.text && data.text !== latent) {
-            console.log('[OpenAI] Generated text:', data.text);
-            return data.text;
+        if (!resp.ok) {
+            console.warn(`[OpenAI] ✗ HTTP error: ${resp.status}`);
+        } else {
+            const data = await resp.json();
+            
+            console.log('[OpenAI] Response data:', data);
+            
+            // If API returned text successfully, use it
+            if (data.text && data.text.length > 0) {
+                console.log('[OpenAI] ✓ Success:', data.text);
+                return data.text;
+            } else if (data.fallback) {
+                console.warn('[OpenAI] ✗ API indicated fallback:', data.error || 'No reason given');
+            } else {
+                console.warn('[OpenAI] ✗ Empty or invalid response');
+            }
         }
-        
-        // If API indicated fallback or returned nothing, use procedural
     } catch (e) {
-        console.error('[OpenAI] API generation error:', e);
-        // fall through to procedural generation
+        console.error('[OpenAI] ✗ Error:', e);
     }
 
     // Both APIs failed or returned empty: procedural fallback
-    console.log('[Procedural] Using procedural generation');
+    console.warn('[Procedural] ⚠ Using procedural fallback');
     return generateProceduralWorldtext(scenario, entityId, vector, latent, index);
 }
 
@@ -737,24 +1279,19 @@ function generateProceduralWorldtext(scenario, entityId, vector, baseSeed, index
     } while ((variation + (ent?.type === 'animate' ? ` As a living thing, I sense the world shifting around me.` : ent?.type === 'inanimate' ? ` My substance remains, but its meaning changes.` : ent?.type === 'abstract' ? ` I dissolve and reform, ever ephemeral.` : '')) === baseSeed && attempts < 5);
     const entityType = ent?.type || 'entity';
     
-    // Append a contextual sentence based on entity
-    let suffix = '';
-    if (entityType === 'animate') suffix = ` As a living thing, I sense the world shifting around me.`;
-    else if (entityType === 'inanimate') suffix = ` My substance remains, but its meaning changes.`;
-    else if (entityType === 'abstract') suffix = ` I dissolve and reform, ever ephemeral.`;
-    
-    return variation + suffix;
+    // No suffix needed - keep actions short and direct
+    return variation;
 }
 
 function getFallbackVariations(vector) {
     // Hardcoded fallback in case JSON load fails
     const fallback = {
         ACTION: [
-            `I reach toward the light, unfurling careful movement that tastes warmth and possibility.`,
-            `I step aside from pressure, testing the ground and pausing to listen for further cues.`,
-            `I gather moisture into my tissues and edge slowly toward safer, softer soil below.`,
-            `I spread a thin thread of growth along shaded bark, searching for a crack to hold.`,
-            `I pivot a small movement outward, feeling the surface shift beneath my contact and respond.`
+            `I move toward warmth.`,
+            `I shift position.`,
+            `I absorb moisture.`,
+            `I spread outward.`,
+            `I hold still.`
         ]
     };
     return fallback[vector] || [];
